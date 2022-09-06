@@ -1,0 +1,107 @@
+---
+title: "water_points"
+author: "David bricker"
+date: "2022-09-05"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Make sure tidyverse and mapping packages are loaded
+
+require(maps)
+require(mapproj)
+require(tidyverse)
+
+# Read in Data
+
+raw_df <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-04/water.csv")
+
+```
+
+# Map water points
+```{r}
+
+# Use map_data() function to create a data frame of country coordinates for the world. Then filter to African Countries
+
+africa <- map_data("world") %>% 
+  filter(region %in% c(
+    "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi",
+    "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros",
+    "Democratic Republic of the Congo", "Republic of Congo", "Ivory Coast",
+    "Djibouti", "Egypt", "Equatorial Guinea", "Eritrea", "Swaziland", "Ethiopia",
+    "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia",
+    "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco",
+    "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe",
+    "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan",
+    "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara", "Zambia", "Zimbabwe"
+  )) 
+
+
+# Remove points that have obviously wrong coordinates and filter to only "y","n" status_id's
+clean_df <- raw_df %>% 
+  filter(
+    lon_deg <= 52, 
+    lon_deg >= -15,
+    lat_deg <= 25,
+    lat_deg >= -35,
+    status_id %in% c("y", "n")
+  )
+
+
+ggplot() +
+  # Create map using coordinates in the africa data frame.
+  geom_map(
+    data = africa,
+    map = africa,
+    aes(map_id = region), # Map at the country level.
+    color = "white", # Set border color
+    fill = "#7d8daf" # Set fill color.
+  ) +
+  expand_limits(
+    x = africa$long, # Set x and y axis for the chart
+    y = africa$lat
+  ) +
+  coord_map() + #  Correct perspective/set desired projection.
+  # Add points for water sources
+  geom_point(
+    data = clean_df,
+    aes(lon_deg, lat_deg, color = status_id), # use long and lat as x and y, color by status
+    alpha = .08 # Set alpha very low.
+  ) +
+  scale_color_manual(
+    values = c("#666100", "#610066"),
+    labels = c("No", "Yes")
+  ) + # Set colors and labels for status_id.
+  theme_void() + # Set overall theme.
+  labs(
+    title = "Water Point Functionality in Sub-Saharan Africa",
+    color = "Water\nAvailable" # Add Labels.
+  ) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) + # Make legend more readable.
+  theme(
+    plot.margin = unit(rep(.5, 4), "cm"), # Arrange plot in area.
+    plot.background = element_rect(fill = "#1a1c2e"), # Set background color of plot.
+    # Set text size and color.
+    plot.title = element_text(
+      color = "white",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      color = "white",
+      size = 12
+    ),
+    legend.title = element_text(
+      color = "white",
+      size = 12
+    ),
+    legend.text = element_text(
+      color = "white",
+      size = 12
+    )
+  )
+```
+
